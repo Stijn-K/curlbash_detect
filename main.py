@@ -34,11 +34,27 @@ def setup_arg_parser() -> ArgumentParser:
 
 def setup_socket_server(host: str, port: int) -> socket:
     socket_server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
     socket_server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     socket_server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
+
     socket_server.bind((host, port))
     socket_server.listen()
+
+    print(f'Listening on {host}:{port}')
+
     return socket_server
+
+
+def setup_payloads(hidden: bool)-> None:
+    if hidden:
+        PAYLOAD['default'] = PAYLOAD['default_hidden']
+        PAYLOAD['bad'] = PAYLOAD['bad_hidden']
+        print('Using hidden payloads')
+    else:
+        PAYLOAD['default'] = PAYLOAD['default_verbose']
+        PAYLOAD['bad'] = PAYLOAD['bad_verbose']
+        print('Using verbose payloads')
 
 
 def send_chunk(chunk: str, connection: socket) -> None:
@@ -50,8 +66,10 @@ def handle(client: socket, request: str) -> None:
     print('='*20)
     print('Request: ')
     print(request)
+
     client.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
     client.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, SEND_BUFFER_SIZE)
+
     client.sendall(HEADER.encode('ascii'))
     send_chunk(PAYLOAD['default'], client)
 
@@ -73,18 +91,8 @@ def handle(client: socket, request: str) -> None:
     send_chunk('', client)
 
 def main(host: str, port: int, hidden: bool) -> None:
-
-    if hidden:
-        PAYLOAD['default'] = PAYLOAD['default_hidden']
-        PAYLOAD['bad'] = PAYLOAD['bad_hidden']
-        print('Using hidden payloads')
-    else:
-        PAYLOAD['default'] = PAYLOAD['default_verbose']
-        PAYLOAD['bad'] = PAYLOAD['bad_verbose']
-        print('Using verbose payloads')
-
+    setup_payloads(hidden)
     socket_server = setup_socket_server(host, port)
-    print(f'Listening on {host}:{port}')
 
     while True:
         try:
