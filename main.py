@@ -12,7 +12,7 @@ SLEEP = 2
 HEADER = f'HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n'
 
 PAYLOAD = {
-    'default_hidden': f'sleep {SLEEP}\n(echo -en "" || echo -en "\033[1B\r\033[K\033[1A\r\033[K"); echo -en "\r\033[K"\b \b',
+    'default_hidden': f'sleep {SLEEP}\n(true || echo -en "\033[1B\r\033[K\033[1A\r\033[K"); echo -en "\r\033[K"\b \b',
     'default_verbose': f'sleep {SLEEP}\n',
     'default': '',
 
