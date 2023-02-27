@@ -23,6 +23,7 @@ PAYLOAD = {
     'bad': ''
 }
 
+
 def setup_arg_parser() -> ArgumentParser:
     parser = ArgumentParser()
     parser.add_argument('-o', '--host', type=str, default='0.0.0.0')
@@ -62,6 +63,7 @@ def send_chunk(chunk: str, connection: socket) -> None:
     connection.sendall(chunk.encode('ascii'))
     connection.sendall("\r\n".encode('ascii'))
 
+
 def handle(client: socket, request: str) -> None:
     print('='*20)
     print('Request: ')
@@ -90,6 +92,7 @@ def handle(client: socket, request: str) -> None:
 
     send_chunk('', client)
 
+
 def main(host: str, port: int, hidden: bool) -> None:
     setup_payloads(hidden)
     socket_server = setup_socket_server(host, port)
@@ -103,6 +106,7 @@ def main(host: str, port: int, hidden: bool) -> None:
         except KeyboardInterrupt:
             socket_server.close()
             return
+
 
 if __name__ == '__main__':
     args = setup_arg_parser().parse_args()
