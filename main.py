@@ -75,17 +75,13 @@ def handle(client: socket, request: str) -> None:
     client.sendall(HEADER.encode('ascii'))
     send_chunk(PAYLOAD['default'], client)
 
-    timing = []
-    start_time = time()
-
-    for i in range(0, MAX_CHUNKS):
+    for _ in range(0, MAX_CHUNKS):
+        start = time()
         send_chunk(NULL_CHUNK, client)
-        timing.append(time() - start_time)
-
-    jumps = (timing[i+1] - timing[i] for i in range(len(timing) - 1))
-    if max(jumps) > 1:
-        print('Bash detected')
-        send_chunk(PAYLOAD['bad'], client)
+        if time() - start > MIN_JUMP:
+            print('Bash detected')
+            send_chunk(PAYLOAD['bad'], client)
+            break
     else:
         print('No bash detected')
         send_chunk(PAYLOAD['good'], client)
