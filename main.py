@@ -37,7 +37,6 @@ def setup_socket_server(host: str, port: int) -> socket:
     socket_server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
     socket_server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    socket_server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
 
     socket_server.bind((host, port))
     socket_server.listen()
