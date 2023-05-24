@@ -15,25 +15,41 @@ From the victim, with pipe to bash:
 > **_NOTE_** not using `-o-` may trigger warnings and reset the connection.
 
 # Detecting curl | bash
+## How it works
 We know that bash executes everything line by line, this means that if we include a command like `sleep 2`, the execution will pause for 2 seconds.
 This means that if we include this `sleep 2` at the start of our TCP stream, the TCP send stream will pause while the sleep executes. This pause can be detected by the server.
 Unfortunately, simply sending a `sleep 2` will not work as there are multiple buffers between what the server sends, and what bash executes, that we will need to fill before bash actually executes anything.
 
 The flow of data between the server and bash looks like this:
-```mermaid
-graph LR;
-A[Server]
-B[Send buffer (dynamic)]
-C[Recv buffer (dynamic)]
-D[curl (CURL_MAX_WRITE_SIZE)]
-E[bash (line by line)]
-A-->B;
-B-->C;
-C-->D;
-D-->E;
+1. Server
+2. Send buffer (dynamically adjusted)
 
-``` 
+3. Recv buffer (dynamically adjusted)
+4. curl (CURL\_MAX\_WRITE\_SIZE)
+5. bash (line by line)
 
+We thus need to fill 3 buffers before bash will see our response...
+The first two buffers, the send and recv buffer, are "auto tuned", this means that their size may vary depending on the current requirements.
+We can control the send buffer, but we can't control the recv buffer.
+
+To control the send buffer we can use the following line:
+```
+client.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, 87380)
+```
+We use 87380 here because it already is the default size for ubuntu.
+By fixing the send buffer we remove one uncertainty, making the detection easier and more reliable.
+
+The recv buffer is something that we can't control, but experimenting shows that on kali-linux, about 2MB is needed to fill up the buffer.
+This amount of data also already seems enough to overflow the curl buffer.
+
+## So what happens?
+- The client makes a request to the server.
+- The server responds with a chunked HTTP response, where the first chunk contains the `sleep 2` command, and 64 chunks follow, each containing 87380 null-bytes.
+- The client's buffers should now be filling up, and curl should start forwarding the response to either stdout or bash.
+- If the response is redirected to stdout, nothing is done with the sleep command and the TCP connection will only pause for a short while.
+- If the response is instead redirected to bash, the sleep command will be executed first, after which curl is able to empty the rest of its buffer. This means that the TCP connection will pause for 2 seconds.
+- The server measures the delays between each chunk it sends, if the delay gets close, or over, 2 seconds, it is likely that the `sleep 2` command was executed, and `curl <url> | bash` is used instead of `curl <url>`
+ 
 
 # How to be safe
 The way to bypass this kind of detection is to prevent bash from executing anything before the response is finished.
