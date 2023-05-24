@@ -14,8 +14,25 @@ From the victim, with pipe to bash:
 
 > **_NOTE_** not using `-o-` may trigger warnings and reset the connection.
 
-# How it works
+# Detecting curl | bash
+We know that bash executes everything line by line, this means that if we include a command like `sleep 2`, the execution will pause for 2 seconds.
+This means that if we include this `sleep 2` at the start of our TCP stream, the TCP send stream will pause while the sleep executes. This pause can be detected by the server.
+Unfortunately, simply sending a `sleep 2` will not work as there are multiple buffers between what the server sends, and what bash executes, that we will need to fill before bash actually executes anything.
 
+The flow of data between the server and bash looks like this:
+```mermaid
+graph LR;
+A[Server]
+B[Send buffer (dynamic)]
+C[Recv buffer (dynamic)]
+D[curl (CURL_MAX_WRITE_SIZE)]
+E[bash (line by line)]
+A-->B;
+B-->C;
+C-->D;
+D-->E;
+
+``` 
 
 
 # How to be safe
@@ -47,4 +64,6 @@ the response of the server will contain some terminal magic to hide the sleep co
 This way, the response will look less suspicious.
 
 # Credits
-https://www.idontplaydarts.com/2016/04/detecting-curl-pipe-bash-server-side/ (unreachable as of 24/05/2023)
+- https://www.idontplaydarts.com/2016/04/detecting-curl-pipe-bash-server-side/ (unreachable as of 24/05/2023)
+	- https://web.archive.org/web/20230408195648/https://www.idontplaydarts.com/2016/04/detecting-curl-pipe-bash-server-side/
+- a unknown reddit user claiming this is possible and linking the above blogpost.
