@@ -99,8 +99,11 @@ def main(host: str, port: int, hidden: bool) -> None:
             handle(client_connection, request)
             client_connection.close()
         except KeyboardInterrupt:
+            print("Keyboard interrupt, exiting...")
             socket_server.close()
             return
+        except ConnectionResetError:
+            print("Connection reset by peer...")
 
 
 if __name__ == '__main__':
