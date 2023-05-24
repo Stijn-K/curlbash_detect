@@ -48,7 +48,8 @@ This amount of data also already seems enough to overflow the curl buffer.
 - The client's buffers should now be filling up, and curl should start forwarding the response to either stdout or bash.
 - If the response is redirected to stdout, nothing is done with the sleep command and the TCP connection will only pause for a short while.
 - If the response is instead redirected to bash, the sleep command will be executed first, after which curl is able to empty the rest of its buffer. This means that the TCP connection will pause for 2 seconds.
-- The server measures the delays between each chunk it sends, if the delay gets close, or over, 2 seconds, it is likely that the `sleep 2` command was executed, and `curl <url> | bash` is used instead of `curl <url>`
+- The server measures the delays between each chunk it sends, if the delay gets close, or over, 2 seconds, it is likely that the `sleep 2` command was executed, and `curl <url> | bash` is used.
+- If between all 64 chunks no significant delay was detected, it is likely that just `curl <url>` was used.
  
 
 # How to be safe
